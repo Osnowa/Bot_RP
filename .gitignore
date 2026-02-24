@@ -1,0 +1,26 @@
+# Python кэш
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Виртуальная среда
+venv/
+env/
+.env/
+
+# Логи
+*.log
+
+# Сборки
+build/
+dist/
+*.egg-info/
+
+# IDE и редакторы
+.idea/
+.vscode/
+
+# OS файлы
+.DS_Store
+Thumbs.db
+.env
