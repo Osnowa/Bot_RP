@@ -1,22 +1,28 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-import random
-from rock_paper_scissors_bot.keyboards.keyboards import keyboard_knb as keyboard1, keyboard_yes_not as keyboard
-from aiogram.types import ReplyKeyboardRemove
+from aiogram.types import CallbackQuery
+from rock_paper_scissors_bot.keyboards import keyboards
+from rock_paper_scissors_bot.games import move_opponents
 
-from rock_paper_scissors_bot.database import users
+from rock_paper_scissors_bot.database import users, games
 
 router = Router()
 
-figure = ["Камень", "Ножницы", "Бумага"]
+# Словарь для соответствия callback_data и отображаемого текста
+figure_map = {
+    "rock": "Камень 🪨",
+    "paper": "Бумага 📄",
+    "scissors": "Ножницы ✂️"
+}
 
 
 @router.message(Command(commands="start"))
 async def process_command_start(message: Message):
     await message.answer(
-        "Давай сыграем в игру: камень, ножницы, бумага ?",
-        reply_markup=keyboard(),
+        f"Привет \n\n"
+        f"Я простенький бот для игры в камень, ножницы, бумага \n Что тебя интересует ?",
+        reply_markup=keyboards.keyboard_menu(),
     )
     telegram_id = message.from_user.id
     user = users.get_user(telegram_id)
@@ -24,59 +30,54 @@ async def process_command_start(message: Message):
         users.app_user(telegram_id)
 
 
-@router.message(Command(commands="help"))
-async def process_command_help(message: Message):
-    await message.answer("Тут должны быть правила, но их и так все знают \n"
-                         "Хочешь сыграть ? ",
-                         reply_markup=keyboard())
+@router.callback_query(lambda c: c.data == "rul")
+async def callback_no(callback: CallbackQuery):
+    await callback.message.answer("Правила: их нет )")
+    await callback.answer()
 
 
-@router.message(Command(commands="static"))
-async def process_command_help(message: Message):
-    user_data = users.get_user(message.from_user.id)
-    a,b,c,d,e = user_data
-    await message.answer(f"Вот Ваша Статистика игр \n"
-                         f"Твой ID {b}")
+@router.callback_query(lambda c: c.data == "static")
+async def process_command_help(callback: CallbackQuery):
+    user_data = users.get_user(callback.from_user.id)
+    i, te_id, win, los, tot_games = user_data
+    await callback.message.answer(
+        f"📊 Вот Ваша Статистика игр:\n\n"
+        f"🏆 Побед: {win}\n"
+        f"💔 Поражений: {los}\n"
+        f"🎮 Всего игр: {tot_games}"
+    )
+    await callback.answer()
 
 
-@router.message(lambda x: x.text == "Давай")
-async def answer_yes(message: Message):
-    await message.answer(
-        "Отлично \n"
-        "Делай свой выбор",
-        reply_markup=keyboard1())
+@router.callback_query(lambda c: c.data == "game")
+async def callback_yes(callback: CallbackQuery):
+    await callback.message.answer(
+        "Круто ! \nДелай свой ход",
+        reply_markup=keyboards.keyboard_motion()
+    )
+    await callback.answer()
 
 
-@router.message(lambda x: x.text == "Не хочу")
-async def answer_noy(message: Message):
-    await message.answer("Жаль (",
-                         reply_markup=ReplyKeyboardRemove())
+@router.callback_query(lambda x: x.data in ["rock", "paper", "scissors"])
+async def callback_figure(callback: CallbackQuery):
+    telegram_id = callback.from_user.id
+    otv_fig = move_opponents.motion_opponent()  # возвращает "Камень 🪨", "Ножницы ✂️" или "Бумага 📄"
+    user_choice = figure_map[callback.data]  # преобразуем "rock" в "Камень 🪨"
 
+    if otv_fig == user_choice:
+        await callback.message.answer(f"Ничья! Я тоже выбросил {otv_fig}")
+        games.add_los(telegram_id)  # или games.add_draw если есть такая функция
 
-@router.message(lambda x: x.text in figure)
-async def answer(message: Message):
-    otv_fig = random.choice(figure)
-    if otv_fig == message.text:
-        await message.answer("Ничья ! \n"
-                             "Хочешь сыграть еще раз ?",
-                             reply_markup=keyboard())
-    elif otv_fig == 'Камень' and message.text == 'Ножницы':
-        await message.answer("Проиграл ! \n"
-                             "Хочешь сыграть еще раз ?",
-                             reply_markup=keyboard())
-
-    elif otv_fig == 'Бумага' and message.text == "Камень":
-        await message.answer("Проиграл !\n"
-                             "Хочешь сыграть еще раз ?",
-                             reply_markup=keyboard())
-
-    elif otv_fig == "Ножницы" and message.text == "Бумага":
-        await message.answer("Проиграл \n"
-                             "Хочешь сыграть еще раз ?",
-                             reply_markup=keyboard())
+    elif (
+            (otv_fig == 'Камень 🪨' and user_choice == 'Ножницы ✂️') or
+            (otv_fig == 'Бумага 📄' and user_choice == 'Камень 🪨') or
+            (otv_fig == 'Ножницы ✂️' and user_choice == 'Бумага 📄')
+    ):
+        await callback.message.answer(f"Я выбросил {otv_fig}\nТы проиграл!")
+        games.add_los(telegram_id)
 
     else:
-        await message.answer(f"Я выбросил {otv_fig} \n"
-                             f"Поздравляю, ты Победил ! \n"
-                             "Хочешь сыграть еще раз ?",
-                             reply_markup=keyboard())
+        await callback.message.answer(f"Я выбросил {otv_fig}\nПоздравляю, ты победил!")
+        games.add_wins(telegram_id)
+
+    await callback.answer()

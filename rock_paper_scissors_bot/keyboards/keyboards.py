@@ -1,30 +1,27 @@
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def keyboard_yes_not():
-    # создаём кнопки
-    button_1 = KeyboardButton(text="Давай")
-    button_2 = KeyboardButton(text="Не хочу")
-
-    # создаём клавиатуру
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[[button_1, button_2]],  # один ряд
-        resize_keyboard=True,  # делаем кнопки компактнее
-        one_time_keyboard=True  # клавиатура скрывается после нажатия
+def keyboard_menu():
+    button_game = InlineKeyboardButton(text="Играть", callback_data="game")
+    button_rules = InlineKeyboardButton(text="Правила", callback_data="rul")
+    button_static = InlineKeyboardButton(text="Статистика", callback_data="static")
+    # создаём клавиатуру с одним рядом
+    inline_kb_men = InlineKeyboardMarkup(
+        inline_keyboard=[[button_game, button_rules, button_static]]
     )
-    return keyboard
+
+    return inline_kb_men
 
 
-def keyboard_knb():
-    # создаём кнопки
-    button_10 = KeyboardButton(text="Камень")
-    button_20 = KeyboardButton(text="Ножницы")
-    button_30 = KeyboardButton(text="Бумага")
+def keyboard_motion():
+    buts = {"Камень": "Камень 🪨", "Ножницы": "Ножницы ✂️", "Бумага": "Бумага 📄"}
+    button_rock = InlineKeyboardButton(text=buts['Камень'], callback_data="rock")
+    button_paper = InlineKeyboardButton(text=buts['Бумага'], callback_data="paper")
+    button_scissors = InlineKeyboardButton(text=buts['Ножницы'], callback_data="scissors")
 
-    # создаём клавиатуру
-    keyboard1 = ReplyKeyboardMarkup(
-        keyboard=[[button_10, button_20, button_30]],  # один ряд
-        resize_keyboard=True,  # делаем кнопки компактнее
-        one_time_keyboard=True  # клавиатура скрывается после нажатия
+    inline_kb_mot = InlineKeyboardMarkup(
+        inline_keyboard=[[button_rock, button_paper, button_scissors]]
     )
-    return keyboard1
+
+    return inline_kb_mot
+
