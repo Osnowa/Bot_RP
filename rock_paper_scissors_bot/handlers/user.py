@@ -5,6 +5,8 @@ import random
 from rock_paper_scissors_bot.keyboards.keyboards import keyboard_knb as keyboard1, keyboard_yes_not as keyboard
 from aiogram.types import ReplyKeyboardRemove
 
+from rock_paper_scissors_bot.database import users
+
 router = Router()
 
 figure = ["Камень", "Ножницы", "Бумага"]
@@ -16,6 +18,10 @@ async def process_command_start(message: Message):
         "Давай сыграем в игру: камень, ножницы, бумага ?",
         reply_markup=keyboard(),
     )
+    telegram_id = message.from_user.id
+    user = users.get_user(telegram_id)
+    if not user:
+        users.app_user(telegram_id)
 
 
 @router.message(Command(commands="help"))
@@ -23,6 +29,14 @@ async def process_command_help(message: Message):
     await message.answer("Тут должны быть правила, но их и так все знают \n"
                          "Хочешь сыграть ? ",
                          reply_markup=keyboard())
+
+
+@router.message(Command(commands="static"))
+async def process_command_help(message: Message):
+    user_data = users.get_user(message.from_user.id)
+    a,b,c,d,e = user_data
+    await message.answer(f"Вот Ваша Статистика игр \n"
+                         f"Твой ID {b}")
 
 
 @router.message(lambda x: x.text == "Давай")
