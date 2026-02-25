@@ -36,6 +36,13 @@ async def callback_no(callback: CallbackQuery):
     await callback.answer()
 
 
+@router.message(Command(commands="sbros"))
+async def command_sbros(message: Message):
+    telegram_id = message.from_user.id
+    games.sbros_static(telegram_id)
+    await message.answer("Ваша статистика сброшена")
+
+
 @router.callback_query(lambda c: c.data == "static")
 async def process_command_help(callback: CallbackQuery):
     user_data = users.get_user(callback.from_user.id)
@@ -44,9 +51,23 @@ async def process_command_help(callback: CallbackQuery):
         f"📊 Вот Ваша Статистика игр:\n\n"
         f"🏆 Побед: {win}\n"
         f"💔 Поражений: {los}\n"
-        f"🎮 Всего игр: {tot_games}"
+        f"🎮 Всего игр: {tot_games}",
+        reply_markup=keyboards.keyboard_menu()
     )
     await callback.answer()
+
+
+@router.message(Command(commands="static"))
+async def process_command_help(message: Message):
+    user_data = users.get_user(message.from_user.id)
+    i, te_id, win, los, tot_games = user_data
+    await message.answer(
+        f"📊 Вот Ваша Статистика игр:\n\n"
+        f"🏆 Побед: {win}\n"
+        f"💔 Поражений: {los}\n"
+        f"🎮 Всего игр: {tot_games}",
+        reply_markup=keyboards.keyboard_menu()
+    )
 
 
 @router.callback_query(lambda c: c.data == "game")
@@ -65,7 +86,8 @@ async def callback_figure(callback: CallbackQuery):
     user_choice = figure_map[callback.data]  # преобразуем "rock" в "Камень 🪨"
 
     if otv_fig == user_choice:
-        await callback.message.answer(f"Ничья! Я тоже выбросил {otv_fig}")
+        await callback.message.edit_text(f"Ничья! Я тоже выбросил {otv_fig}",
+                                         reply_markup=callback.message.reply_markup)
         games.add_los(telegram_id)  # или games.add_draw если есть такая функция
 
     elif (
@@ -73,11 +95,17 @@ async def callback_figure(callback: CallbackQuery):
             (otv_fig == 'Бумага 📄' and user_choice == 'Камень 🪨') or
             (otv_fig == 'Ножницы ✂️' and user_choice == 'Бумага 📄')
     ):
-        await callback.message.answer(f"Я выбросил {otv_fig}\nТы проиграл!")
+        await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
+                                         f"Ты выбросил {figure_map[callback.data]}\n"
+                                         f"Ты проиграл!",
+                                         reply_markup=callback.message.reply_markup)
         games.add_los(telegram_id)
 
     else:
-        await callback.message.answer(f"Я выбросил {otv_fig}\nПоздравляю, ты победил!")
+        await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
+                                         f"Ты выбросил {figure_map[callback.data]}\n"
+                                         f"Поздравляю, ты победил!",
+                                         reply_markup=callback.message.reply_markup)
         games.add_wins(telegram_id)
 
     await callback.answer()
