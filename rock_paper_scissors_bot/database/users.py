@@ -1,6 +1,6 @@
 from rock_paper_scissors_bot.database.db import connect
 
-def app_user(telegram_id):
+def add_user(telegram_id):
     '''Добавляем пользователя в таблицу'''
     conn = connect()
     cur = conn.cursor()
