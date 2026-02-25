@@ -88,36 +88,33 @@ async def callback_figure(callback: CallbackQuery):
     telegram_id = callback.from_user.id
     otv_fig = move_opponents.motion_opponent()  # возвращает "Камень 🪨", "Ножницы ✂️" или "Бумага 📄"
     user_choice = figure_map[callback.data]  # преобразуем "rock" в "Камень 🪨"
-    try:
-        if otv_fig == user_choice:
-            await callback.message.edit_text(f"Ничья! Я тоже выбросил {otv_fig}",
-                                             reply_markup=callback.message.reply_markup)
-            games.add_draw(telegram_id)
 
-        elif (
-                (otv_fig == 'Камень 🪨' and user_choice == 'Ножницы ✂️') or
-                (otv_fig == 'Бумага 📄' and user_choice == 'Камень 🪨') or
-                (otv_fig == 'Ножницы ✂️' and user_choice == 'Бумага 📄')
-        ):
-            await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
-                                             f"Ты выбросил {figure_map[callback.data]}\n"
-                                             f"Ты проиграл!",
-                                             reply_markup=callback.message.reply_markup)
-            games.add_los(telegram_id)
+    result = move_opponents.get_winner(user_choice, otv_fig)  # определяем победителя
+    if result == "draw":
+        await callback.message.edit_text(f"Ничья! Я тоже выбросил {otv_fig}",
+                                         reply_markup=callback.message.reply_markup)
+        games.add_draw(telegram_id)
 
-        elif otv_fig == 'ONE PUNCH MAN':
-            await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
-                                             f"Ты выбросил {figure_map[callback.data]}\n"
-                                             "Был применен супер прием !\n"
-                                             f"Ты проиграл самому ONE_PUNCH_MAN!",
-                                             reply_markup=callback.message.reply_markup)
-            games.add_los(telegram_id)
+    elif result == "lose":
+        await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
+                                         f"Ты выбросил {figure_map[callback.data]}\n"
+                                         f"Ты проиграл!",
+                                         reply_markup=callback.message.reply_markup)
+        games.add_los(telegram_id)
 
-        else:
-            await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
-                                             f"Ты выбросил {figure_map[callback.data]}\n"
-                                             f"Поздравляю, ты победил!",
-                                             reply_markup=callback.message.reply_markup)
-            games.add_wins(telegram_id)
-    finally:
-        await callback.answer()
+    elif result == 'OPM':
+        await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
+                                         f"Ты выбросил {figure_map[callback.data]}\n"
+                                         "Был применен супер прием !\n"
+                                         f"Ты проиграл самому ONE_PUNCH_MAN!",
+                                         reply_markup=callback.message.reply_markup)
+        games.add_los(telegram_id)
+
+    else:
+        await callback.message.edit_text(f"Я выбросил {otv_fig}\n"
+                                         f"Ты выбросил {figure_map[callback.data]}\n"
+                                         f"Поздравляю, ты победил!",
+                                         reply_markup=callback.message.reply_markup)
+        games.add_wins(telegram_id)
+
+    await callback.answer()
