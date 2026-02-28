@@ -79,3 +79,15 @@ def test_delete_user(temp_db):
     cursor.execute("SELECT * FROM users WHERE telegram_id = ?", (444,))
     user = cursor.fetchone()
     assert user is None
+
+def test_users_add(temp_db):
+    users.add_user('123', temp_db)
+    user = users.get_user('123', temp_db)
+    assert user[1] == 123
+
+def test_wins(temp_db):
+    tg = '123'
+    users.add_user(tg, temp_db)
+    games.add_wins(tg, temp_db)
+    user = users.get_user(tg, temp_db)
+    assert user[2] == 1
